@@ -1,0 +1,45 @@
+{
+  "name": "notif-sender",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^7",
+    "@sap/cds-hana": "^2",
+    "@sap/xsenv": "^5.1.0",
+    "@sap/xssec": "^3",
+    "axios": "^1.7.2",
+    "express": "^4",
+    "nodemailer": "^6.9.14"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^1",
+    "@sap/cds-dk": "^7",
+    "@sap/eslint-plugin-cds": "^3",
+    "@sap/ux-specification": "^1.120.14",
+    "eslint": "^9",
+    "rimraf": "^5.0.5"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch-config-app": "cds watch --open config-app/webapp/index.html?sap-ui-xx-viewCache=false",
+    "undeploy": "cf undeploy notif-sender --delete-services --delete-service-keys --delete-service-brokers",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "watch-template-app": "cds watch --open template-app/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-log-report": "cds watch --open log-report/webapp/index.html?sap-ui-xx-viewCache=false"
+  },
+  "cds": {
+    "requires": {
+      "auth": "xsuaa",
+      "db": "hana"
+    }
+  },
+  "sapux": [
+    "app/config-app",
+    "app/template-app",
+    "app/log-report"
+  ]
+}
