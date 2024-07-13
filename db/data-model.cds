@@ -26,6 +26,7 @@ entity Templates : managed {
   key msgType: t_msgType @title : 'Message Type';
   templateID: String(50) @title : 'Template ID';
   content: String(200) @title : 'Content';
+  templateOrder: String(10) @title : 'Template Order';
 }
 
 entity Log : cuid, managed {
@@ -35,6 +36,7 @@ entity Log : cuid, managed {
   key documentRef: String(100) @title : 'Document Reference';
   status: String(30) @title : 'Status';
   messageContent: LargeString @title : 'Message Content';
+  sender: String(50) @title : 'Sender';
 }
 
 entity Messages: managed {
@@ -48,6 +50,8 @@ entity Messages: managed {
   channel: String;
   isSignRequired: Boolean;
   @nullable placeholders: many String;
+  key vendor: t_vendor;
+  key documentType: t_docType;
   //recipients: Association to many Recipient on recipients.message=$self; 
 }
 

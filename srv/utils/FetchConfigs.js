@@ -47,7 +47,7 @@ async function fetchEntryById(entityName, id) {
  * @param {string} docType - The docType of the entry to fetch.
  * @returns {Promise<Object|null>} - A promise that resolves to the entity entry or null if not found.
  */
-async function  fetchEntryByDocumentType(entityName, docType) {
+async function  fetchEntryByDocumentType(entityName, vendor, docType, messageType) {
   // Ensure the CDS framework is ready
   await cds.connect();
 
@@ -58,7 +58,12 @@ async function  fetchEntryByDocumentType(entityName, docType) {
   }
 
   // Fetch the entry by ID
-  const entry = await cds.run(SELECT.one.from(entity).where({ documentType: docType }));
+  let entry;
+  try {
+    entry = await cds.run(SELECT.from(entity).where({vendor: vendor}).and({ documentType: docType }).and({msgType: messageType}).columns(`{templateID, content}`));
+  }catch(Error) {
+    console.error('Error executing query:', Error.message);
+  }
   return entry;
 }
 
@@ -68,9 +73,9 @@ async function  fetchEntryByDocumentType(entityName, docType) {
  * @param {string} type - The type of the entry to fetch.
  * @returns {Promise<Object|null>} - A promise that resolves to the entity entry or null if not found.
  */
-async function  fetchEntryByCommunicationType(entityName, type, vendor) {
+async function  fetchEntryByCommunicationType(entityName, vendor, msgType) {
   // Ensure the CDS framework is ready
-  await cds.connect();
+  // await cds.connect();
 
   // Access the entity
   const entity = cds.entities[entityName];
@@ -79,8 +84,13 @@ async function  fetchEntryByCommunicationType(entityName, type, vendor) {
   }
 
   // Fetch the entry by ID
-  const entry = await cds.run(SELECT.one.from(entity).where({ type: type }).and({client: vendor}));
-  return entry;
+  let config;
+  try {
+    config = await cds.run(SELECT.from(entity).where({ vendor: vendor }).and({msgType: msgType}));
+  }catch(Error) {
+    console.error('Error executing query:', Error.message);
+  }
+  return config;
 }
 module.exports = {
   fetchAllEntries,
