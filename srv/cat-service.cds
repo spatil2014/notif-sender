@@ -69,7 +69,7 @@ entity recipient as projection on messaging.Recipient;
   //   body : LargeString;
   //   document_no: String(50);
   //  }
-  action messagingAction(recipients: array of String, subject: String, content: String, document_no: String, attachment: String, channel: String, isSignRequired: Boolean, placeholders: array of String) returns Boolean;
+  action messagingAction(recipients: array of String, subject: String, content: String, document_no: String, attachment: String, channel: String, isSignRequired: Boolean, placeholders: array of String, vendor: String, documentType: String) returns Boolean;
   
   // action sendEmail(body: body) returns Boolean;
 }

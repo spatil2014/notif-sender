@@ -6,32 +6,32 @@ function replacePlaceholders(template, values) {
   let i = 0;
   return template.replace(/{#var#}/g, () => values[i++] || '');
 }
-async function sendSMS(contactNos) {
-  const template = "{#var#}{#var#} bill no.{#var#}{#var#}{#var#} MT{#var#}{#var#} MT,{#var#}{#var#} MT, {#var#} {#var#} MT, {#var#}{#var#} MT,={#var#} MT {#var#} P.I.Truck- GALLANTT";
-  //"AHEAD ENGINEERS bill no.GILGJ-05093 20MM-550D 34.950 MT,=34.950 MT GJ12BW6910 P.I.Truck-GALLANTT"
+
+async function sendSMS(req) {
+
+  // Fetch Configuration &  template details
+  let configDetails = await configs.fetchEntryByCommunicationType('Configuration', req.vendor, req.channel);
+  let templateDetails = await configs.fetchEntryByDocumentType('Templates',req.vendor, req.documentType, req.channel);
+  const template = templateDetails[0].content;
+  const logTable = cds.entities['Log'];
   
   let msg;
-  msg = contactNos.content;
-  if (!contactNos.content) {
-    msg = replacePlaceholders(template, contactNos.placeholders);
+  msg = req.content;
+  if (!req.content) {
+    msg = replacePlaceholders(template, req.placeholders);
   }
-  //  let templateDetails = await configs.fetchEntryByDocumentType('Templates', 'Invoice');
-  //configs.fetchEntryById('Configuration','SMS', 'GALL');
-  //  let configDetails = await configs.fetchEntryByCommunicationType('Configuration', 'SMS', 'Gallant');
-  //configs.fetchEntryById('Templates','Invoice Billing');
-  //  const logTable = cds.entities['Log'];
   
   let payload = {
-    userid: "gallantt",
-    password: "Gall@2020",
-    senderid: "GMLGDM",
+    userid: configDetails[0].username,
+    password: configDetails[0].password,
+    senderid: configDetails[0].sender,
     msgType: "text",
-    dltTemplateId: "1107171291502855094",//"34545454541107171291502855094",
+    dltTemplateId: templateDetails[0].templateID,//"34545454541107171291502855094",
     duplicatecheck: "true",
     sendMethod: "quick",
     sms: [
       {
-        mobile: contactNos.recipients,
+        mobile: req.recipients,
         msg: msg
       }
     ]
@@ -43,20 +43,28 @@ async function sendSMS(contactNos) {
         'Content-Type': 'application/json'
       }
     });
-    // await cds.run(INSERT.into(logTable).entries({
-    //   messageContent: msg,
-    //   sender: 'GMLGDM',
-    //   status: 'success',
-    //   statusText: `${response.data.reason}`
-    // }));
+    await cds.run(INSERT.into(logTable).entries({
+      vendor: req.vendor,
+      msgType: req.channel,
+      documentType: req.documentType,
+      documentRef: req.document_no,
+      messageContent: msg,
+      sender: configDetails[0].sender,
+      status: 'success',
+      statusText: `${response.data.reason}`
+    }));
     console.log('SMS sent successfully:', response.data.reason);
   } catch (error) {
-    // await cds.run(INSERT.into(logTable).entries({
-    //   messageContent: msg,
-    //   sender: 'GMLGDM',
-    //   status: 'failed',
-    //   statusText: `Error sending SMS: ${error.message}`
-    // }));
+    await cds.run(INSERT.into(logTable).entries({
+      vendor: req.vendor,
+      msgType: req.channel,
+      documentType: req.documentType,
+      documentRef: req.document_no,
+      messageContent: msg,
+      sender: configDetails[0].sender,
+      status: 'Failed',
+      statusText: `${error.data.reason}`
+    }));
     console.error('Error sending SMS:', error);
   }
 }
