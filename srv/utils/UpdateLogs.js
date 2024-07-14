@@ -2,12 +2,12 @@ const destHelper = require("./DestHelper");
 const destinationServiceInstanceName = "notif-sender-destination-service"
 const axios = require('axios');
 
-async function updateLog(vendor, msgType, documentType, documentRef, status, messageContent) {
+async function updateLog(vendor, msgType, documentType, documentRef, messageContent, sender, status, statusText) {
     return new Promise(async (resolve, reject) => {
         let destinationName = "SELF_SRV";
         let selfDest = await destHelper.getDestination(destinationServiceInstanceName, destinationName);
         var payloadToUpdateinLog = {
-            vendor, msgType, documentType, documentRef, status, messageContent
+            vendor, msgType, documentType, documentRef, messageContent, sender, status, statusText
         }
         //replace with empty string
         Object.keys(payloadToUpdateinLog).forEach(k => payloadToUpdateinLog[k] = payloadToUpdateinLog[k] ? payloadToUpdateinLog[k] : "");

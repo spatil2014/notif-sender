@@ -1,4 +1,7 @@
 const cds = require('@sap/cds');
+const destHelper = require("./DestHelper");
+const destinationServiceInstanceName = "notif-sender-destination-service"
+const axios = require('axios');
 
 /**
  * Fetches all entries from the specified entity.
@@ -47,24 +50,25 @@ async function fetchEntryById(entityName, id) {
  * @param {string} docType - The docType of the entry to fetch.
  * @returns {Promise<Object|null>} - A promise that resolves to the entity entry or null if not found.
  */
-async function  fetchEntryByDocumentType(entityName, vendor, docType, messageType) {
-  // Ensure the CDS framework is ready
-  await cds.connect();
-
-  // Access the entity
-  const entity = cds.entities[entityName];
-  if (!entity) {
-    throw new Error(`Entity ${entityName} not found`);
-  }
-
-  // Fetch the entry by ID
-  let entry;
+async function  fetchEntryForTemplate(vendor, docType, messageType) {
+  let destinationName = "SELF_SRV";
+  let selfDest = await destHelper.getDestination(destinationServiceInstanceName, destinationName);
+  const params = `$filter=vendor eq '${vendor}' and documentType eq '${docType}' and msgType eq '${messageType}'`;
+  // let local= "http://localhost:4004";
   try {
-    entry = await cds.run(SELECT.from(entity).where({vendor: vendor}).and({ documentType: docType }).and({msgType: messageType}).columns(`{templateID, content}`));
-  }catch(Error) {
-    console.error('Error executing query:', Error.message);
+    console.log("URL 1"+`${selfDest.destDetails.URL}`)
+    const response = await axios.get(`${selfDest.destDetails.URL}/msgmstdata/templates?${params}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${selfDest.authDetails[0].value}`
+      }
+  });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    throw new Error('Failed to fetch templates');
   }
-  return entry;
+  
 }
 
 /**
@@ -73,28 +77,28 @@ async function  fetchEntryByDocumentType(entityName, vendor, docType, messageTyp
  * @param {string} type - The type of the entry to fetch.
  * @returns {Promise<Object|null>} - A promise that resolves to the entity entry or null if not found.
  */
-async function  fetchEntryByCommunicationType(entityName, vendor, msgType) {
-  // Ensure the CDS framework is ready
-  // await cds.connect();
-
-  // Access the entity
-  const entity = cds.entities[entityName];
-  if (!entity) {
-    throw new Error(`Entity ${entityName} not found`);
-  }
-
-  // Fetch the entry by ID
-  let config;
+async function  fetchEntryForConfiguration(vendor, msgType) {
+  let destinationName = "SELF_SRV";
+  let selfDest = await destHelper.getDestination(destinationServiceInstanceName, destinationName);
+  const params = `$filter=vendor eq '${vendor}' and msgType eq '${msgType}'`;
+  // let local= "http://localhost:4004";
   try {
-    config = await cds.run(SELECT.from(entity).where({ vendor: vendor }).and({msgType: msgType}));
-  }catch(Error) {
-    console.error('Error executing query:', Error.message);
+    console.log("URL"+`${selfDest.destDetails.URL}`)
+    const response = await axios.get(`${selfDest.destDetails.URL}/msgmstdata/configuration?${params}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${selfDest.authDetails[0].value}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching configuration:', error);
+    throw new Error('Failed to fetch configuration');
   }
-  return config;
 }
 module.exports = {
   fetchAllEntries,
   fetchEntryById,
-  fetchEntryByDocumentType,
-  fetchEntryByCommunicationType
+  fetchEntryForTemplate,
+  fetchEntryForConfiguration
 };

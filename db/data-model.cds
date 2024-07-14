@@ -37,6 +37,7 @@ entity Log : cuid, managed {
   status: String(30) @title : 'Status';
   messageContent: LargeString @title : 'Message Content';
   sender: String(50) @title : 'Sender';
+  statusText: String(50) @title : 'Status Text';
 }
 
 entity Messages: managed {

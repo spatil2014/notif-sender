@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cds = require('@sap/cds');
 const configs = require("./FetchConfigs");
+const captureLog = require("./UpdateLogs");
 
 function replacePlaceholders(template, values) {
   let i = 0;
@@ -10,9 +11,12 @@ function replacePlaceholders(template, values) {
 async function sendSMS(req) {
 
   // Fetch Configuration &  template details
-  let configDetails = await configs.fetchEntryByCommunicationType('Configuration', req.vendor, req.channel);
-  let templateDetails = await configs.fetchEntryByDocumentType('Templates',req.vendor, req.documentType, req.channel);
-  const template = templateDetails[0].content;
+  let configDetails = await configs.fetchEntryForConfiguration(req.vendor, req.channel);
+  let templateDetails = await configs.fetchEntryForTemplate(req.vendor, req.documentType, req.channel);
+  console.log("template" + templateDetails.value[0]);
+  
+  console.log("request"+req);
+  const template = templateDetails.value[0].content;
   const logTable = cds.entities['Log'];
   
   let msg;
@@ -20,13 +24,13 @@ async function sendSMS(req) {
   if (!req.content) {
     msg = replacePlaceholders(template, req.placeholders);
   }
-  
+  console.log("config" + configDetails.value[0]);
   let payload = {
-    userid: configDetails[0].username,
-    password: configDetails[0].password,
-    senderid: configDetails[0].sender,
+    userid: configDetails.value[0].username,
+    password: configDetails.value[0].password,
+    senderid: configDetails.value[0].sender,
     msgType: "text",
-    dltTemplateId: templateDetails[0].templateID,//"34545454541107171291502855094",
+    dltTemplateId: templateDetails.value[0].templateID,//"34545454541107171291502855094",
     duplicatecheck: "true",
     sendMethod: "quick",
     sms: [
@@ -38,33 +42,15 @@ async function sendSMS(req) {
   };
 
   try {
-    const response = await axios.post('https://smsinteract.in/SMSApi/send', payload, {
+    const response = await axios.post(configDetails.value[0].apihost+'/send', payload, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
-    await cds.run(INSERT.into(logTable).entries({
-      vendor: req.vendor,
-      msgType: req.channel,
-      documentType: req.documentType,
-      documentRef: req.document_no,
-      messageContent: msg,
-      sender: configDetails[0].sender,
-      status: 'success',
-      statusText: `${response.data.reason}`
-    }));
+    captureLog.updateLog(req.vendor, req.channel, req.documentType, req.document_no, msg, configDetails.value[0].sender, 'success', `${response.data.reason}`);
     console.log('SMS sent successfully:', response.data.reason);
   } catch (error) {
-    await cds.run(INSERT.into(logTable).entries({
-      vendor: req.vendor,
-      msgType: req.channel,
-      documentType: req.documentType,
-      documentRef: req.document_no,
-      messageContent: msg,
-      sender: configDetails[0].sender,
-      status: 'Failed',
-      statusText: `${error.data.reason}`
-    }));
+    captureLog.updateLog(req.vendor, req.channel, req.documentType, req.document_no, msg, configDetails.value[0].sender, 'failed', `${error.message}`);
     console.error('Error sending SMS:', error);
   }
 }
