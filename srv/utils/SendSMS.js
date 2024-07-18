@@ -1,5 +1,13 @@
+/**
+ * sendSMS - method to trigger message via configured API
+ * vendor - from request
+ * channel - from request (SMS, EMAIL)
+ * document type - from request
+ * content - from request
+ * placeholders - from request
+ */
+
 const axios = require('axios');
-const cds = require('@sap/cds');
 const configs = require("./FetchConfigs");
 const captureLog = require("./UpdateLogs");
 
@@ -13,24 +21,21 @@ async function sendSMS(req) {
   // Fetch Configuration &  template details
   let configDetails = await configs.fetchEntryForConfiguration(req.vendor, req.channel);
   let templateDetails = await configs.fetchEntryForTemplate(req.vendor, req.documentType, req.channel);
-  console.log("template" + templateDetails.value[0]);
-  
-  console.log("request"+req);
   const template = templateDetails.value[0].content;
-  const logTable = cds.entities['Log'];
   
   let msg;
   msg = req.content;
   if (!req.content) {
     msg = replacePlaceholders(template, req.placeholders);
   }
-  console.log("config" + configDetails.value[0]);
+  
+  /// Prepare payload based maintained data
   let payload = {
     userid: configDetails.value[0].username,
     password: configDetails.value[0].password,
     senderid: configDetails.value[0].sender,
     msgType: "text",
-    dltTemplateId: templateDetails.value[0].templateID,//"34545454541107171291502855094",
+    dltTemplateId: templateDetails.value[0].templateID,
     duplicatecheck: "true",
     sendMethod: "quick",
     sms: [
